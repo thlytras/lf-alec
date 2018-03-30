@@ -4,7 +4,10 @@ load("input/jem.aloha.RData")
 
 # Set up analysis options
 
-modelfile <- c("code/models/model1-unstratified.jag")[model_to_run]
+modelfile <- c("code/models/model1-unstratified.jag",
+    "code/models/model2-strBySex.jag",
+    "code/models/model3-strBySmoking.jag",
+    "code/models/model4-strByBoth.jag")[model_to_run]
 
 if (tolower(dataset_to_run)=="ecrhs") {
   load("input/procData-ECRHS.RData")
@@ -23,7 +26,7 @@ if (tolower(dataset_to_run)=="ecrhs") {
   outname <- sprintf("output/resLog-POOLED-%s-", model_to_run)
 }
 
-if (!exists("iterations_burnin")) iterations_burnin <- 5000
+if (!exists("iterations_burnin")) iterations_burnin <- 500
 if (!exists("iterations_sampling")) iterations_sampling <- 20000
 if (!exists("iterations_thinning")) iterations_thinning <- 10
 
@@ -66,7 +69,7 @@ dat$gmean <- sapply(1:3, function(i) mean(dat$pyb[,i][which(dat$pyb[,i]>0)]))
 
 ini <- function(chain) {
   ini.values <- list(
-    beta = rep(0,26),
+    beta = rep(0,c(26,28,28,30)[model_to_run]),
     sigma.a1=0.1, sigma.a2=0.1, sigma.b1=0.1, sigma.b2=0.1, sigma.res=0.1,
     rho.u1=0, rho.u2=0, rho.Q2=0
   )

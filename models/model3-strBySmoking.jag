@@ -1,0 +1,130 @@
+
+data {
+    zero[1] <- 0
+    zero[2] <- 0
+    zero[3] <- 0
+    zero[4] <- 0
+    
+    noninf[1] <- 0.5
+    noninf[2] <- 0.5
+    noninf[3] <- 0.5
+}
+
+model {
+
+  # Random intercept and slope for each participant
+  for(j in 1:K ) {
+    u1[j,1:4] ~ dmnorm(zero, tau.u)
+  }
+
+  # Variance-covariance matrix of the participant random effects
+  R.u[1,1] <- pow(sigma.a1, 2)
+  R.u[2,2] <- pow(sigma.b1, 2)
+  R.u[3,3] <- pow(sigma.a2, 2)
+  R.u[4,4] <- pow(sigma.b2, 2)
+  R.u[1,2] <- rho.u1 * sigma.a1 * sigma.b1
+  R.u[2,1] <- R.u[1,2]
+  R.u[3,4] <- rho.u2 * sigma.a2 * sigma.b2
+  R.u[4,3] <- R.u[3,4]
+  R.u[1,3] <- rho.ua * sigma.a1 * sigma.a2
+  R.u[3,1] <- R.u[1,3]
+  R.u[2,4] <- rho.ub * sigma.b1 * sigma.b2
+  R.u[4,2] <- R.u[2,4]
+  R.u[1,4] <- rho.Q1 * sigma.a1 * sigma.b2
+  R.u[4,1] <- R.u[1,4]
+  R.u[2,3] <- rho.Q2 * sigma.b1 * sigma.a2
+  R.u[3,2] <- R.u[2,3]
+
+  tau.u ~ dwish(R.u, 4)
+  sigma.u <- inverse(tau.u)
+    # with priors:
+  sigma.a1 ~ dunif(0, 40)
+  sigma.b1 ~ dunif(0, 40)
+  sigma.a2 ~ dunif(0, 40)
+  sigma.b2 ~ dunif(0, 40)
+  rho.u1 ~ dunif(-1,1)
+  rho.u2 ~ dunif(-1,1)
+  rho.Q2 ~ dunif(-1,1)
+  rho.ua <- rho.u1 * rho.Q2
+  rho.ub <- rho.Q2 * rho.u2
+  rho.Q1 <- rho.u1 * rho.Q2 * rho.u2
+
+  # Define model for each observational unit
+  for(i in 1:N ) {
+    mu[i] <-    beta[1]*FEV1[i] + beta[2]*FEV1[i]*X[i] + beta[3]*FEV1[i]*age[i] +
+                beta[4]*FEV1[i]*age[i]*female[i] + beta[5]*FEV1[i]*female[i] + 
+                beta[6]*FEV1[i]*X[i]*everSmoked[pid[i], survey[i]] + 
+                beta[7]*FEV1[i]*height[i] + beta[8]*FEV1[i]*height[i]^2 + 
+                beta[9]*FEV1[i]*cursmoke[i] + 
+                beta[10]*FEV1[i]*packyrs[pid[i],survey[i]] + 
+                beta[11]*FEV1[i]*SESmid[pid[i]] + beta[12]*FEV1[i]*SESlow[pid[i]] + 
+                beta[13]*FEV1[i]*disadv[i] + beta[14]*FEV1[i]*asthma[i] + 
+                
+                beta[15]*FVC[i] + beta[16]*FVC[i]*X[i] + beta[17]*FVC[i]*age[i] +
+                beta[18]*FVC[i]*age[i]*female[i] + beta[19]*FVC[i]*female[i] + 
+                beta[20]*FVC[i]*X[i]*everSmoked[pid[i], survey[i]] + 
+                beta[21]*FVC[i]*height[i] + beta[22]*FVC[i]*height[i]^2 + 
+                beta[23]*FVC[i]*cursmoke[i] + 
+                beta[24]*FVC[i]*packyrs[pid[i],survey[i]] + 
+                beta[25]*FVC[i]*SESmid[pid[i]] + beta[26]*FVC[i]*SESlow[pid[i]] + 
+                beta[27]*FVC[i]*disadv[i] + beta[28]*FVC[i]*asthma[i] + 
+                
+                u1[pid[i],1]*FEV1[i] + u1[pid[i],2]*FEV1[i]*age[i] + 
+                u1[pid[i],3]*FVC[i] + u1[pid[i],4]*FVC[i]*age[i]
+
+    Y[i] ~ dnorm(mu[i], tau.res*weight[i])
+  }
+        
+  # Respidual variance
+  tau.res <- pow(sigma.res,-2)
+  sigma.res ~ dunif(0,1000)
+
+  # Priors:
+  # Fixed intercept and slope
+  for (b in 1:28) {
+    beta[b] ~ dnorm(0.0,1.0E-5)
+  }
+
+    
+# Imputation models for missing covariates
+
+  for(i in 1:N ) {
+    # Smoking
+    cursmoke[i] ~ dbern(theta.smoke)
+    asthma[i] ~ dbern(theta.asthma)
+  }
+  
+  for (j in 1:K) {
+    # SES
+    SES[j] ~ dcat(p.SES)
+    SESmid[j] <- equals(SES[j], 2)
+    SESlow[j] <- equals(SES[j], 3)
+    
+    for (t in 1:3) {
+      pyb[j,t] ~ dgamma(gaj[j, t] , gbj[j, t])
+      gaj[j, t] <- ga[t] * smoked[j, t] + 0.0001
+      gbj[j, t] <- gb[t] * smoked[j, t] + 0.0001
+      smoked[j, t] ~ dbern(pSmk[t])
+    }
+    packyrs[j,1] <- pyb[j,1]
+    packyrs[j,2] <- pyb[j,2] + packyrs[j,1]
+    packyrs[j,3] <- pyb[j,3] + packyrs[j,2]
+    everSmoked[j,1] <- packyrs[j,1]>0
+    everSmoked[j,2] <- packyrs[j,2]>0
+    everSmoked[j,3] <- packyrs[j,3]>0
+  }
+  
+  for (t in 1:3) {
+    ga[t] <- gmean[t]^2/gsd[t]^2
+    gb[t] <- gmean[t]/gsd[t]^2
+    logit(pSmk[t]) <- bSmk[t]
+    bSmk[t] ~ dnorm(0.0,1.0E-5)
+  }
+  
+  # Priors for hyperparameters
+  theta.smoke ~ dbeta(0.5,0.5)
+  theta.asthma ~ dbeta(0.5,0.5)
+  p.SES[1:3] ~ ddirch(noninf[1:3])
+  
+}
+

@@ -4,7 +4,10 @@ load("input/jem.aloha.RData")
 
 # Set up analysis options
 
-modelfile <- c("code/models/model1-unstratified.jag")[model_to_run]
+modelfile <- c("code/models/model1-unstratified.jag",
+    "code/models/model2-strBySex.jag",
+    "code/models/model3-strBySmoking.jag",
+    "code/models/model4-strByBoth.jag")[model_to_run]
 
 if (tolower(dataset_to_run)=="ecrhs") {
   load("input/procData-ECRHS.RData")
