@@ -118,7 +118,7 @@ model {
     ga[t] <- gmean[t]^2/gsd[t]^2
     gb[t] <- gmean[t]/gsd[t]^2
     logit(pSmk[t]) <- bSmk[t]
-    bSmk[t] ~ dnorm(0.0,1.0E-5)
+    bSmk[t] ~ dnorm(0.0,1.0E-4)
   }
   
   # Priors for hyperparameters
