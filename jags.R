@@ -51,7 +51,7 @@ dat <- list(
     female = as.integer(data.long2$gender=="Female"),
     height = data.long2$height - 1.7,
     asthma = data.long2$asthma,
-    cursmoke = as.integer(data.long2$cursmoke=="cur"),
+    cursmoke = as.integer(data.long2$cursmoke),
     pyb = with(data.wide, cbind(pybE1, pybE2, pybE3)),
     smoked = with(data.wide, cbind(as.integer(pybE1>0), as.integer(pybE2>0), as.integer(pybE3>0))),
     disadv = data.long2$disadv,

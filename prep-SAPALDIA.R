@@ -3,6 +3,8 @@ library(readstata13)
 sap.main <- read.dta13("../input/main.dta", nonint.factors=TRUE)
 sap.jobs <- read.dta13("../input/occupational.dta", nonint.factors=TRUE)
 
+levels(sap.main$sex_s1) <- trimws(levels(sap.main$sex_s1))
+
 sap.main$SES <- sap.main$educ_s1
 sap.main$SES[is.na(sap.main$SES)] <- sap.main$educ_s2[is.na(sap.main$SES)]
 sap.main$SES <- factor(sap.main$SES, levels=rev(levels(sap.main$SES)))
